@@ -6,8 +6,8 @@ for (let i = 1; i <= COUNT.length; i++) {
     Mock.mock({
       // 根据数据模板生成模拟数据。
       id: Mock.Random.guid(), // 随机id
-      title: Mock.Random.first(), // 随机标题isDelete: false,
-      // 是否删除
+      title: Mock.Random.first(), // 随机标题
+      isDelete: false, // 是否删除
       locked: Mock.Random.boolean(), // 随机锁定
       record: COUNT.map(() => {
         // 代办单项列表的数据

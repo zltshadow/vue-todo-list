@@ -12,20 +12,20 @@ export default {
     // 获取todo列表
     mock.onGet('/todo/list').reply(config => {
       //  config 指 前台传过来的值
-      let mockTodo = Todos.map(tode => {
+      let mockTodo = Todos.map(todo => {
         // 重组 Todos数组，变成我们想要的数据
         return {
-          id: tode.id,
-          title: tode.title,
-          count: tode.record.filter(data => {
+          id: todo.id,
+          title: todo.title,
+          count: todo.record.filter(data => {
             if (data.checked === false) return true
             return false
           }).length, // 过滤到record里面 ‘checked’ 为true的数据，因为它们已经被完成了
-          locked: tode.locked,
-          isDelete: tode.isDelete
+          locked: todo.locked,
+          isDelete: todo.isDelete
         }
-      }).filter(tode => {
-        if (tode.isDelete === true) return false // 过滤掉 ‘isDelete’为true，因为已经被删除了。
+      }).filter(todo => {
+        if (todo.isDelete === true) return false // 过滤掉 ‘isDelete’为true，因为已经被删除了。
         return true
       })
       return new Promise((resolve, reject) => {
@@ -62,21 +62,14 @@ export default {
       let todo = Todos.find(todo => {
         return id && todo.id === id
       })
-      // todo.count (等待完成数目)等于 todo.record（代办事项列表下面未被选择的数据)
-      //   console.log(config.params)
-      //   console.log(todo)
-      //   todo.count = todo.record.filter(data => {
-      //     return data.checked === false
-      //   }).length
-      if (todo) {
-        todo.count = todo
+      // todo.count (等待完成数目)等于 todo.record（代办事项列表下面未被选择的数据
+      todo
+        ? (todo.count = todo
           ? todo.record.filter(data => {
             return data.checked === false
           }).length
-          : null
-      } else {
-      }
-
+          : null)
+        : false
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           resolve([
@@ -100,6 +93,39 @@ export default {
             isDelete: false,
             checked: false
           })
+          return true
+        }
+      })
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve([200])
+        }, 200)
+      })
+    })
+
+    // 修改标题
+    mock.onPost('/todo/editTodo').reply(config => {
+      let { todo } = JSON.parse(config.data)
+      Todos.some((t, index) => {
+        if (t.id === todo.id) {
+          t.title = todo.title
+          t.locked = todo.locked
+          t.isDelete = todo.isDelete
+          return true
+        }
+      })
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve([200])
+        }, 200)
+      })
+    })
+    // 修改标题
+    mock.onPost('/todo/editRecord').reply(config => {
+      let { id, record, index } = JSON.parse(config.data)
+      Todos.some(t => {
+        if (t.id === id) {
+          t.record[index] = record
           return true
         }
       })

@@ -1,34 +1,60 @@
 <template>
-  <div class="page lists-show">
+  <div class="page lists-show"
+       v-show="!todo.isDelete">
     <!-- 头部模块 -->
     <nav>
       <!-- 当用户浏览车窗口尺寸小于40em时候，显示手机端的菜单图标 -->
-      <div class="nav-group">
+      <div class="form list-edit-form"
+           v-show="isUpdate">
+        <!-- 当用户点击标题进入修改状态，就显示当前内容可以修改 -->
+        <input type="text"
+               v-model="todo.title"
+               @keyup.enter="updateTitle"
+               :disabled="todo.locked">
+        <div class="nav-group right">
+          <a class="nav-item"
+             @click="isUpdate = false">
+            <span class="icon-close">
+            </span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-group"
+           @click="$store.dispatch('updateMenu')"
+           v-show="!isUpdate">
+        <!-- 在菜单的图标下面添加updateMenu时间，他可以直接调用vuex actions.js里面的updateMenu方法 -->
         <a class="nav-item">
           <span class="icon-list-unordered">
           </span>
         </a>
       </div>
       <!-- 显示标题和数字模块 -->
-      <h1 class="title-page">
-        <span class="title-wrapper">{{todo.title}}</span> <!-- title:标题 绑定标题 -->
-        <span class="count-list">{{todo.count || 0}}</span><!-- count:数量 绑定代办单项熟练-->
+      <h1 class="title-page"
+          v-show="!isUpdate"
+          @click="isUpdate = true">
+        <span class="title-wrapper">{{todo.title}}</span>
+        <!-- title:标题 绑定标题 -->
+        <span class="count-list">{{todo.count || 0}}</span>
+        <!-- count:数量 绑定代办单项熟练-->
       </h1>
       <!-- 右边显示删除图标和锁定图标的模块 -->
-      <div class="nav-group right">
+      <div class="nav-group right"
+           v-show="!isUpdate">
         <div class="options-web">
-          <a class=" nav-item">
+          <a class=" nav-item"
+             @click="onlock">
             <!-- cicon-lock锁定的图标
-            icon-unlock：非锁定的图标
-            -->
+                                                    icon-unlock：非锁定的图标
+                                                    -->
             <span class="icon-lock"
                   v-if="todo.locked"></span>
             <span class="icon-unlock"
                   v-else>
             </span>
           </a>
-          <a class=" nav-item">
-            <span class="icon-trash">
+          <a class="nav-item">
+            <span class="icon-trash"
+                  @click="onDelete">
             </span>
           </a>
         </div>
@@ -46,16 +72,21 @@
     </nav>
     <!-- 列表主体模块 -->
     <div class="content-scrollable list-items">
-      <div v-for="item in items"
-           :key="item.id">
-        <item :item="item"></item>
+      <div v-for="(item,index) in items"
+           :key="index">
+        <item :item="item"
+              :index="index"
+              :id="todo.id"
+              :init="init"
+              :locked="todo.locked"></item>
       </div>
     </div>
   </div>
 </template>
 <script>
+
 import item from './item'
-import { getTodo, addRecord } from '../api/api' // 引入我们 封装好的两个接口函数。
+import { addRecord, getTodo, editTodo } from '../api/api'
 export default {
   data () {
     return {
@@ -66,10 +97,10 @@ export default {
       },
       items: [ // 代办单项列表
       ],
-      text: '' // 用户输入单项项绑定的输入
+      text: '', // 用户输入单项项绑定的输入
+      isUpdate: false // 新增修改状态
     }
   },
-  // components的作用就可以把其他子组件挂载到当前父组件的作用域里。
   components: {
     item
   },
@@ -85,12 +116,10 @@ export default {
   },
   methods: {
     init () {
-      // 获取到 $route下params下的id,即我们在menus.vue组件处传入的数据。
       const ID = this.$route.params.id
       getTodo({ id: ID }).then(res => {
         let { id, title, count, isDelete, locked, record
         } = res.data.todo
-        // 请求成功，拿到res.data.todo;在将record 赋值到代办单项列表，其它数据赋值到todo对象
         this.items = record
         this.todo = {
           id: id,
@@ -102,16 +131,38 @@ export default {
       })
     },
     onAdd () {
-      // 当用户输入文字，并且回车时调用次方法。
       const ID = this.$route.params.id
       addRecord({ id: ID, text: this.text }).then(res => {
         this.text = ''
-        this.init()// 请求成功后初始化
+        this.init()
+        this.$store.dispatch('getTodo')
       })
+    },
+    updateTodo () {
+      let _this = this
+      editTodo({
+        todo: this.todo
+      }).then(data => {
+        // _this.init();
+        _this.$store.dispatch('getTodo')
+      })
+    },
+    updateTitle () {
+      this.updateTodo()
+      this.isUpdate = false
+    },
+    onDelete () {
+      this.todo.isDelete = true
+      this.updateTodo()
+    },
+    onlock () {
+      this.todo.locked = !this.todo.locked
+      this.updateTodo()
     }
   }
 }
 </script>
+
 <style lang = "less">
 @import "../common/style/nav.less";
 @import "../common/style/form.less";
